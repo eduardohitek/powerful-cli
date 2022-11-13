@@ -8,9 +8,12 @@ import (
 	"github.com/eduardohitek/powerful-cli/chapter2/todo"
 )
 
-const todoFileName = ".todo.json"
+var todoFileName = ".todo.json"
 
 func main() {
+	if os.Getenv("TODO_FILENAME") != "" {
+		todoFileName = os.Getenv("TODO_FILENAME")
+	}
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "%s tool. Developed by Eduardo Hitek\n", os.Args[0])
 		fmt.Fprintf(flag.CommandLine.Output(), "Copyright 2022\n")
