@@ -24,7 +24,7 @@ func main() {
 			fmt.Println(item.Task)
 		}
 	default:
-		item := strings.Join(os.Args[1:], "")
+		item := strings.Join(os.Args[1:], " ")
 		l.Add(item)
 
 		if err := l.Save(todoFileName); err != nil {
