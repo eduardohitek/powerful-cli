@@ -1,0 +1,6 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/eduardohitek/powerful-cli/chapter5/colStats
+BenchmarkRun-8   	      10	 316941000 ns/op	214887089 B/op	 2527037 allocs/op
+PASS
+ok  	github.com/eduardohitek/powerful-cli/chapter5/colStats	4.585s
