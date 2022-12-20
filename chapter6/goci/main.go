@@ -11,13 +11,21 @@ func run(proj string, out io.Writer) error {
 	if proj == "" {
 		return fmt.Errorf("project directory is required: %w", ErrValidation)
 	}
-	pipeline := make([]step, 1)
+	pipeline := make([]step, 2)
 	pipeline[0] = newStep(
 		"go build",
 		"go",
 		"Go Build: SUCCESS",
 		proj,
 		[]string{"build", ".", "errors"},
+	)
+
+	pipeline[1] = newStep(
+		"go test",
+		"go",
+		"Go Test: SUCCESS",
+		proj,
+		[]string{"test", "-v"},
 	)
 
 	for _, p := range pipeline {
