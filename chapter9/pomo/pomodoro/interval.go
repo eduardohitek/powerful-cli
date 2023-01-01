@@ -97,7 +97,7 @@ func nextCategory(r Repository) (string, error) {
 	}
 	for _, i := range lastBreaks {
 		if i.Category == CategoryLongBreak {
-			return CategoryLongBreak, nil
+			return CategoryShortBreak, nil
 		}
 	}
 
