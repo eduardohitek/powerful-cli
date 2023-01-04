@@ -1,9 +1,7 @@
-//go:build inmemory
-// +build inmemory
-
 package pomodoro_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/eduardohitek/powerful-cli/chapter9/pomo/pomodoro"
@@ -12,5 +10,17 @@ import (
 
 func getRepo(t *testing.T) (pomodoro.Repository, func()) {
 	t.Helper()
-	return repository.NewInMemoryRepo(), func() {}
+	tf, err := os.CreateTemp("", "pomo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tf.Close()
+
+	dbRepo, err := repository.NewSQLite3Repo(tf.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return dbRepo, func() {
+		os.Remove(tf.Name())
+	}
 }

@@ -68,3 +68,99 @@ func (r *dbRepo) Create(i pomodoro.Interval) (int64, error) {
 	}
 	return id, nil
 }
+
+func (r *dbRepo) Update(i pomodoro.Interval) error {
+	r.Lock()
+	defer r.Unlock()
+
+	updSmt, err := r.db.Prepare(
+		"UPDATE interval SET start_time=?, actual_duration=?, state=? where id = ?")
+	if err != nil {
+		return err
+	}
+	defer updSmt.Close()
+
+	res, err := updSmt.Exec(i.StartTime, i.ActualDuration, i.State, i.ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = res.RowsAffected()
+	return err
+}
+
+func (r *dbRepo) ByID(id int64) (pomodoro.Interval, error) {
+	r.RLock()
+	defer r.RUnlock()
+
+	row := r.db.QueryRow("SELECT * FROM interval WHERE id = ?", id)
+	i := pomodoro.Interval{}
+	err := row.Scan(&i.ID, &i.StartTime, &i.PlannedDurarion, &i.ActualDuration, &i.Category, &i.State)
+
+	return i, err
+}
+
+func (r *dbRepo) Last() (pomodoro.Interval, error) {
+	r.RLock()
+	defer r.RUnlock()
+
+	last := pomodoro.Interval{}
+
+	row := r.db.QueryRow("SELECT * FROM interval ORDER BY id desc LIMIT 1")
+	err := row.Scan(&last.ID, &last.StartTime, &last.PlannedDurarion, &last.ActualDuration, &last.Category, &last.State)
+
+	if err == sql.ErrNoRows {
+		return last, pomodoro.ErrNoIntervals
+	}
+	if err != nil {
+		return last, err
+	}
+	return last, nil
+}
+
+func (r *dbRepo) Breaks(n int) ([]pomodoro.Interval, error) {
+	r.RLock()
+	defer r.RUnlock()
+
+	stmt := `SELECT * FROM interval WHERE category LIKE '%Break' ORDER BY id DESC LIMIT ?`
+	rows, err := r.db.Query(stmt, n)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	data := []pomodoro.Interval{}
+	for rows.Next() {
+		i := pomodoro.Interval{}
+		err = rows.Scan(&i.ID, &i.StartTime, &i.PlannedDurarion, &i.ActualDuration, &i.Category, &i.State)
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, i)
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func (r *dbRepo) CategorySummary(day time.Time, filter string) (time.Duration, error) {
+	r.RLock()
+	defer r.RUnlock()
+
+	stmt := `SELECT sum(actual_duration) FROM interval
+	WHERE category LIKE ? AND
+	strftime('%Y-%m-%d', start_time, 'localtime') =
+	strftime('%Y-%m-%d', ?, 'localtime')`
+
+	var ds sql.NullInt64
+	err := r.db.QueryRow(stmt, filter, day).Scan(&ds)
+
+	var d time.Duration
+	if ds.Valid {
+		d = time.Duration(ds.Int64)
+	}
+
+	return d, err
+}
